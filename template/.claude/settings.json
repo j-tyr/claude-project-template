@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet --script \"$CLAUDE_PROJECT_DIR/.state/session_start.py\" || echo '[The session start hook could not run: uv is missing from the PATH Claude Code was started with, or failed. Tell the user.]'"
+          }
+        ]
+      }
+    ]
+  }
+}

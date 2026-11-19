@@ -1,0 +1,4 @@
+# Search tools (Claude Code's Grep, ripgrep) skip whatever .gitignore ignores, and this
+# wrapper's .gitignore ignores every repo inside it. This file re-includes them for search
+# only; git still ignores them.
+!/*/

@@ -1,0 +1,12 @@
+# /[!.]*/ ignores top-level folders not starting with "."; dot-folders and top-level files are tracked.
+# Project repos (every visible top-level folder) have their own git history.
+/[!.]*/
+# Drafts aren't backed up, on purpose; the .gitkeep keeps the folder in the template.
+/.state/notes/drafts/*
+!/.state/notes/drafts/.gitkeep
+# Per machine: written by wrapper.py and Claude Code.
+/.claude/settings.local.json
+/.claude/worktrees/
+__pycache__/
+.DS_Store
+.env*

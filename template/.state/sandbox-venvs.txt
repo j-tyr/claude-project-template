@@ -1,0 +1,6 @@
+# Repos that need a Python venv when working inside a Docker sandbox.
+# One repo directory name per line (relative to the wrapper root), e.g.:
+#   repoA
+#   repoB
+# .state/tools/sandbox_venvs.py builds each with `uv sync --frozen` at ~/venvs/<project>/<repo>,
+# outside the mounted directory. Ignored when not running in a sandbox.
