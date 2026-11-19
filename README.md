@@ -166,7 +166,9 @@ A `.venv` created in a repo inside a sandbox holds Linux binaries, which break y
 tooling in the same directory. So list each Python repo in `.state/sandbox-venvs.txt`, and
 in a sandbox **Claude** runs `uv run --script .state/tools/sandbox_venvs.py` before Python work
 (the template `CLAUDE.md` tells it to). That runs `uv sync --frozen` for each repo into
-`~/venvs/<project>/<repo>` in the VM and prints which venv is whose. On your Mac, use
+`~/venvs/<project>/<repo>` in the VM and prints which venv is whose. Anything after a repo's
+name in the file is passed to `uv sync`: use `repoA --extra dev` when a repo keeps its test
+dependencies in an extra rather than a dependency group. On your Mac, use
 `repo/.venv` as usual. Nothing enforces this: a stray plain `uv run` in a sandbox would
 replace a repo's `.venv`, and you'd notice when your Mac tooling breaks there.
 

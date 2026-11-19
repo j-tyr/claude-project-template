@@ -185,27 +185,39 @@ def test_hook_tells_claude_when_uv_does_not_work(wrapper, tmp_path, uv_script):
 
 # --- tools/sandbox_venvs.py --------------------------------------------------------------
 
-@pytest.mark.skipif(sys.platform != "linux", reason="only runs in a (Linux) sandbox")
-def test_sandbox_venvs_build_outside_the_mount(wrapper, tmp_path):
-    # The stub fails for repoB and records the venv location it was given for the others,
-    # so this fails if the location (the whole point: outside the mount) isn't passed to uv.
+def run_sandbox_venvs(wrapper, tmp_path, venv_list):
+    # The stub fails for repoB and records the venv location and arguments it was given for
+    # the others, so a test fails if the location (the whole point: outside the mount) or a
+    # repo's extra arguments aren't passed to uv.
     bin_dir = empty_dir(tmp_path / "bin")
     (bin_dir / "uv").write_text(
         '#!/bin/sh\ncase "$*" in *repoB*) echo "error: no lockfile" >&2; exit 2;; esac\n'
-        'echo "$UV_PROJECT_ENVIRONMENT" > "$UV_PROJECT_ENVIRONMENT.seen"\n'
+        'echo "$UV_PROJECT_ENVIRONMENT $*" > "$UV_PROJECT_ENVIRONMENT.seen"\n'
     )
     (bin_dir / "uv").chmod(0o755)
+    (wrapper / ".state" / "sandbox-venvs.txt").write_text(venv_list)
+    (tmp_path / "home" / "venvs" / "proj").mkdir(parents=True)
+    env = {**os.environ, "SANDBOX_NAME": "test", "HOME": str(tmp_path / "home"), "PATH": f"{bin_dir}:{os.environ['PATH']}"}
+    return run(sys.executable, wrapper / ".state" / "tools" / "sandbox_venvs.py", env=env)
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="only runs in a (Linux) sandbox")
+def test_sandbox_venvs_build_outside_the_mount(wrapper, tmp_path):
     for repo in ("repoA", "repoB"):
         (wrapper / repo).mkdir()
-    (wrapper / ".state" / "sandbox-venvs.txt").write_text("repoA\r\n# comment\nrepoB\n")
+    result = run_sandbox_venvs(wrapper, tmp_path, "repoA --extra dev\r\n# comment\nrepoB\n")
     venv_root = tmp_path / "home" / "venvs" / "proj"
-    venv_root.mkdir(parents=True)
-    env = {**os.environ, "SANDBOX_NAME": "test", "HOME": str(tmp_path / "home"), "PATH": f"{bin_dir}:{os.environ['PATH']}"}
-    result = run(sys.executable, wrapper / ".state" / "tools" / "sandbox_venvs.py", env=env)
     assert f"- repoA: {venv_root / 'repoA'}" in result.stdout
-    assert (venv_root / "repoA.seen").read_text().strip() == str(venv_root / "repoA")
+    seen = (venv_root / "repoA.seen").read_text().split()
+    assert seen[0] == str(venv_root / "repoA") and seen[-2:] == ["--extra", "dev"]
     assert "- repoB: FAILED" in result.stdout and "error: no lockfile" in result.stderr
     assert "comment" not in result.stdout and result.returncode == 1
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="only runs in a (Linux) sandbox")
+def test_sandbox_venvs_explain_an_empty_list(wrapper, tmp_path):
+    result = run_sandbox_venvs(wrapper, tmp_path, "# only comments\n")
+    assert result.returncode == 1 and "No repos listed" in result.stdout
 
 
 def test_sandbox_venvs_refuse_outside_a_sandbox(wrapper):
