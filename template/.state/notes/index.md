@@ -12,4 +12,4 @@ One line per file under `notes/`, including subdirectories. Keep current.
 <!-- Conversations saved with /export, checked for secrets. -->
 
 ## drafts/ (not in git)
-<!-- Documents headed for a project repo but not there yet. -->
+<!-- Docs not to commit for now: work in progress, learning material. -->

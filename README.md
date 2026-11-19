@@ -40,7 +40,7 @@ myproj/                         <- the wrapper: start Claude / the sandbox HERE
       recap.md                  overwritten handoff; printed at session start
       decisions.md              append-only decision log
       topics/  exports/         durable notes; conversations saved with /export
-      drafts/                   headed for a project repo; NOT in git
+      drafts/                   not to commit for now; NOT in git
     memory/                     Claude's auto-memory
     tools/                      durable scripts, including sandbox_venvs.py
     sandbox-venvs.txt           repos that need a Python venv inside a sandbox
@@ -67,7 +67,7 @@ uv run wrapper.py create --remote git@github.com:me/myproj-state.git ~/Documents
 # Add the project repos, then start Claude (or a sandbox) in the wrapper
 git -C ~/Documents/sandboxes/myproj clone <repo-url>
 
-# Back up notes and memory (works from inside a sandbox too)
+# Back up notes and memory (from a sandbox too, if GitHub access is enabled; see below)
 git -C ~/Documents/sandboxes/myproj push -u origin HEAD
 
 # On another machine, or after moving a wrapper
@@ -84,6 +84,17 @@ uv run wrapper.py setup ~/work/myproj
   So it's per machine, in the gitignored `settings.local.json`. `setup` writes it there and
   keeps any other settings. Sandboxes mount at the same path as your Mac, so one value serves
   both.
+- **GitHub access from a sandbox is optional.** Without it, a sandbox works as normal but
+  can't fetch private repos or push; do those from your Mac. To enable it, give sbx a token
+  on your Mac (it injects credentials for HTTPS remotes only, so SSH remotes still won't work
+  in a sandbox):
+  ```bash
+  sbx secret set github -t "$(gh auth token)"                     # sandboxes created from now on
+  sbx secret set github --sandbox <name> -t "$(gh auth token)"    # one existing sandbox
+  ```
+- The template sets `CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR` so that each Bash command
+  starts from the wrapper root: a stray `cd` into a non-repo folder would otherwise send
+  later git commands to the wrapper's own repo.
 
 To test the toolkit itself (the settings stop pytest writing caches into it):
 

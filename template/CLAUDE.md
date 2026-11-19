@@ -30,6 +30,11 @@ Team-facing conventions belong in each repo's own CLAUDE.md; this file is for th
 - Only this directory persists. `/tmp`, the scratchpad and, in a Docker sandbox, `~/.claude`
   are lost. Reusable scripts go in `.state/tools/`, never only in the scratchpad.
 - Never put secrets in `.state/`; this wrapper is pushed to a git remote.
+- In Bash, use absolute paths, `git -C <repo>` or a `( cd … )` subshell, never a bare `cd`.
+  Each command starts from this directory anyway, and inside a folder that isn't a repo, git
+  falls through to this wrapper's own repo.
+- GitHub access from a Docker sandbox is optional. If a fetch or push fails for lack of
+  credentials, tell the user once and carry on with local work; it isn't a fault.
 - Never copy a hook or MCP server from a repo's own config into this wrapper's config unless
   the user has approved that exact command.
 - **Python in a Docker sandbox:** never create a `.venv` inside a repo; its Linux binaries
@@ -49,7 +54,8 @@ The recap is printed at session start. `.state/notes/index.md` lists the rest.
   formal ADR goes in the relevant repo; leave a one-line pointer here.
 - New notes go in a subdirectory, never at the top of `notes/`, and are listed in `index.md`:
   `topics/` for durable notes; `exports/` for `/export`ed conversations (check them for
-  secrets); `drafts/` for documents headed for a repo. Drafts are **not in git**.
+  secrets); `drafts/` for docs not to commit for now (work in progress, learning material).
+  Drafts are **not in git**.
 - Stable facts and preferences go in auto-memory. Rules state the rule; the history behind
   them goes in `decisions.md`.
 - After updating the recap, commit `.state/` in this wrapper (not in the project repos).
