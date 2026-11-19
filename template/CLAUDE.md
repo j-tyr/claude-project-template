@@ -56,6 +56,8 @@ The recap is printed at session start. `.state/notes/index.md` lists the rest.
   `topics/` for durable notes; `exports/` for `/export`ed conversations (check them for
   secrets); `drafts/` for docs not to commit for now (work in progress, learning material).
   Drafts are **not in git**.
-- Stable facts and preferences go in auto-memory. Rules state the rule; the history behind
-  them goes in `decisions.md`.
+- Standing rules and working preferences (how Claude should work in each repo) go in this file,
+  so they are always loaded; they state the rule, and the history behind them goes in
+  `decisions.md`. Auto-memory is for what Claude learns along the way: techniques, gotchas and
+  facts.
 - After updating the recap, commit `.state/` in this wrapper (not in the project repos).
