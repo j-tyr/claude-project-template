@@ -7,12 +7,25 @@ sandboxes (`sbx`).
 
 ## Why
 
-- Notes, decisions and Claude's memory need to outlive any one session or sandbox, and be
-  backed up, without cluttering the project repos.
-- `/tmp` and Claude's session scratchpad are throwaway. Durable tooling needs a home.
-- Multi-repo projects are awkward when each repo has its own Claude session.
-- In a sandbox, only the mounted directory persists. `~/.claude` and parent directories
-  you see inside the VM are VM-local, not your host's.
+Claude Code keeps a project's working state in places that don't last, or aren't shared,
+the way a long-running project needs:
+
+- **Each session starts cold.** A new session, `/clear` or compaction loses the working
+  context. The wrapper keeps a handoff recap, a decision log and notes, and prints the
+  recap at every session start.
+- **Auto-memory lives under `~/.claude`.** It's lost when a sandbox is removed, isn't
+  shared between your Mac, a sandbox or another machine, and isn't backed up. The wrapper
+  keeps it in `.state/memory/`, under git.
+- **Durable material needs a home outside the repos.** Notes, memory and helper scripts
+  don't belong in the project repos' history, and `/tmp` and the scratchpad are throwaway.
+  The wrapper is a small git repo of its own, which you can push to a private remote.
+- **One session per repo splits the project.** Each repo gets its own memory and notes,
+  and no session can see across repos. One session started at the wrapper sees them all.
+- **Sandboxes don't bring your config.** sbx doesn't import `~/.claude` and runs in
+  `bypassPermissions` mode, so your prefs and guardrails are missing unless the project
+  supplies them. The wrapper's `CLAUDE.md` and `.claude/settings.json` do.
+- **Your Mac and a sandbox share one directory.** A Linux `.venv` built in a repo would
+  break your macOS tooling there, so sandbox venvs are built outside the mount.
 
 ## Requirements
 
@@ -30,9 +43,10 @@ sandboxes (`sbx`).
 ```
 myproj/                         <- the wrapper: start Claude / the sandbox HERE
   CLAUDE.md                     wrapper rules, repo map, your project-specific prefs
+  .gitignore                    ignores the repos, drafts and per-machine files
   .ignore                       lets search tools (Claude's Grep) see the repos
   .claude/
-    settings.json               session start hook + your project-specific rules
+    settings.json               session start hook, Bash working-dir setting, your rules
     settings.local.json         this machine's memory path + "don't ask again" approvals
   .state/
     notes/
@@ -50,11 +64,13 @@ myproj/                         <- the wrapper: start Claude / the sandbox HERE
 
 The wrapper is a git repo too. It ignores every visible top-level folder (the repos) and
 tracks the rest: top-level files and the `.claude/` and `.state/` folders, except
-`settings.local.json` and the contents of `drafts/`. Keep wrapper content in those
-dot-folders, since any new visible top-level folder is treated as a repo. Push the wrapper
-to a private remote to back up notes and memory without touching the project repos'
-history. Single-repo projects use the same shape. Because git ignores the repos, so would Claude's Grep (it respects `.gitignore`);
-`.ignore` re-includes them for search only.
+`settings.local.json`, `.claude/worktrees/`, `.env*` files and the contents of `drafts/`.
+Keep wrapper content in those dot-folders, since any new visible top-level folder is
+treated as a repo. Push the wrapper to a private remote to back up notes and memory without
+touching the project repos' history. Single-repo projects use the same shape.
+
+Because git ignores the repos, so would Claude's Grep (it respects `.gitignore`); `.ignore`
+re-includes them for search only.
 
 ## Usage
 
@@ -154,7 +170,9 @@ from every settings file combine (`deny` beats `ask` beats `allow`).
 Few repos ship this config, and missing it mostly means extra permission prompts. When you
 clone a repo that has some, mirror what matters into the wrapper's config by hand (a repo
 hook using `$CLAUDE_PROJECT_DIR` may need its path adjusted, since that variable points at
-the wrapper). Two more options:
+the wrapper). Review a repo's hooks and MCP servers before copying them: they run
+commands, and in a sandbox nothing asks first. The template `CLAUDE.md` tells Claude never
+to copy one without your approval of that exact command. Two more options:
 - `/cd repoA` (Claude Code v2.1.246+) switches the session to that repo's project files.
   The wrapper's settings, including the memory path, stop applying until you `/cd` back.
 - `claude --settings repoA/.claude/settings.json` adds one repo's settings for a session
